@@ -76,3 +76,52 @@ Start from the official approach and add `visibility`. Because `visibility` is l
 2. Scope state classes by chaining them (`.popup-modal.show`), not as a bare `.show`.
 3. Use `position: fixed` plus `translate` to centre modals, rather than relying on how the parent is laid out.
 4. Use `visibility` alongside `opacity` so hidden elements can't be reached with the keyboard or by screen readers.
+
+
+Explaining the transition syntax cheatsheet
+
+transition: transform 0.3s ease-in-out, opacity 0.4s ease;
+
+The commas split this into two separate transitions, one for each property. Each part follows the same pattern:
+
+transition: <property> <duration> <timing-function> <delay>;
+
+┌─────┬───────────┬──────────┬─────────────────┬───────────────┐
+│     │ Property  │ Duration │ Timing function │     Delay     │
+├─────┼───────────┼──────────┼─────────────────┼───────────────┤
+│ 1st │ transform │ 0.3s     │ ease-in-out     │ (none, so 0s) │
+├─────┼───────────┼──────────┼─────────────────┼───────────────┤
+│ 2nd │ opacity   │ 0.4s     │ ease            │ (none, so 0s) │
+└─────┴───────────┴──────────┴─────────────────┴───────────────┘
+
+When there are two time values, the first is always the duration and the second is the delay. That's why your 600ms 100ms meant "take 600ms, but wait 100ms before starting".
+
+transform: the movement
+
+transform is what makes the modal slide. It animates between the two states:
+
+.popup-modal       { transform: translate(-50%, -100%); } /* start: higher up */
+.popup-modal.show  { transform: translate(-50%, -50%); }  /* end: centred */
+
+- The X value stays at -50% in both states, so only the Y value animates and the modal moves straight down. If .show had just translateY(-50%), it would replace the whole transform and drop the horizontal centring. The modal would slide diagonally and end up off-centre. This catches a lot of people.
+- ease-in-out starts slowly, speeds up, then slows down again at the end. It suits movement between two points because real objects accelerate and decelerate like that.
+- 0.3s is short, so the slide feels quick.
+
+opacity: the fade
+
+opacity goes from 0% to 100% (these values come from the provided style.css).
+
+- ease is the default curve. It starts quickly and slows down towards the end, which works well for fades: the modal becomes visible almost immediately and then gently settles.
+- 0.4s is slightly longer than the slide, and that's on purpose:
+  - When opening, the modal has finished moving by 0.3s and fades in fully over the last 0.1s, so it looks like it settles into place.
+  - When closing, it finishes moving before it has fully faded out. It doesn't disappear suddenly in the middle of the slide.
+
+Giving each property its own timing like this is something all can't do. transition: 600ms gives everything the same duration and curve.
+
+Why the transition goes on .popup-modal, not .show
+
+The rule is on the base class, so it applies in both directions. When the class is added, the modal animates in; when it's removed, it animates out. If you put it only on .show, the modal would animate in, but it would snap shut on close. At that point the element no longer has .show, so it no longer has a transition either.
+
+Why these two properties
+
+Browsers can animate transform and opacity very cheaply because the graphics card handles them without redoing the page layout. Animating properties like top, margin or height forces the layout to be recalculated on every frame, which can stutter. Sliding with transform and fading with opacity is the standard approach for smooth animations.

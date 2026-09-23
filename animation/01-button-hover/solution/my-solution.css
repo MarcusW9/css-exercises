@@ -15,7 +15,7 @@ button {
     border-radius: 4px;
     border: none;
     color: white;
-    transition: 1s
+    transition: transform 0.3s ease-in-out;
 }
 
 button:hover {
